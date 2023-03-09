@@ -20,9 +20,7 @@ namespace SSMTF
 
 	static constexpr bool is_sprinting(Actor* a_actor) noexcept
 	{
-		return a_actor == *g_thePlayer ?
-		           (*rel_member(std::addressof((*g_thePlayer)->unkBDD)) & 0x1) == 0x1 :
-		           rel_member(std::addressof(a_actor->actorState1))->sprinting;
+		return rel_member(std::addressof(a_actor->actorState1))->sprinting;
 	}
 
 	static bool is_valid_movement_type_name(const BSFixedString& a_type) noexcept
@@ -41,53 +39,6 @@ namespace SSMTF
 	};
 	DEFINE_ENUM_CLASS_BITWISE(MTExclusionEntryFlags);
 
-	static stl::flag<MTExclusionEntryFlags> s_bowExclusionFlags   = MTExclusionEntryFlags::kSprint;
-	static stl::flag<MTExclusionEntryFlags> s_magicExclusionFlags = MTExclusionEntryFlags::kSprint;
-
-	class ExcludedMovementTypes
-	{
-	public:
-		ExcludedMovementTypes() :
-			m_data{
-				std::make_pair(s_bowExclusionFlags, "NPCBowDrawn"),
-				std::make_pair(s_bowExclusionFlags, "NPCBowDrawnQuickShot"),
-				std::make_pair(s_magicExclusionFlags, "NPCMagicCasting")
-			}
-		{
-		}
-
-		inline static auto& GetSingleton()
-		{
-			static ExcludedMovementTypes result;
-			return result;
-		}
-
-		inline constexpr bool IsExcluded(
-			const BSFixedString&  a_movementType,
-			MTExclusionEntryFlags a_from) noexcept
-		{
-			for (auto& e : m_data)
-			{
-				if (e.second == a_movementType)
-				{
-					return e.first.test_any(a_from);
-				}
-			}
-
-			return false;
-		}
-
-	private:
-		std::array<std::pair<stl::flag<MTExclusionEntryFlags>, BSFixedString>, 3> m_data;
-	};
-
-	static bool should_override_mt(
-		const BSFixedString&  a_type,
-		MTExclusionEntryFlags a_flags)
-	{
-		return !ExcludedMovementTypes::GetSingleton().IsExcluded(a_type, a_flags);
-	}
-
 	static BSFixedString get_mt_string(
 		const BSFixedString& a_default,
 		Actor*               a_actor) noexcept
@@ -95,17 +46,15 @@ namespace SSMTF
 		if ((a_actor == *g_thePlayer || s_enableNPC) &&
 		    is_valid_movement_type_name(a_default))
 		{
-			if (is_sprinting(a_actor) &&
-			    should_override_mt(a_default, MTExclusionEntryFlags::kSprint))
+			if (rel_member(std::addressof(a_actor->actorState1))->sneaking)
 			{
-				static BSFixedString result("NPCSprinting");
+				static BSFixedString result("NPCSneaking");
 				return result;
 			}
 
-			if (rel_member(std::addressof(a_actor->actorState1))->sneaking &&
-			    should_override_mt(a_default, MTExclusionEntryFlags::kSneak))
+			if (is_sprinting(a_actor))
 			{
-				static BSFixedString result("NPCSneaking");
+				static BSFixedString result("NPCSprinting");
 				return result;
 			}
 		}
@@ -158,7 +107,6 @@ namespace SSMTF
 		INIConfReader reader(PLUGIN_INI_FILE_NOEXT);
 
 		s_enableNPC = reader.GetBoolValue("", "ApplyToNPC", true);
-		s_magicExclusionFlags.set(MTExclusionEntryFlags::kSprint, !reader.GetBoolValue("", "EnableSprintCasting", false));
 	}
 
 	bool Initialize(const SKSEInterface* a_skse)
@@ -166,7 +114,6 @@ namespace SSMTF
 		LoadSettings();
 
 		gLog.Message("NPC support %s", s_enableNPC ? "ENABLED" : "disabled");
-		gLog.Message("Sprint casting %s", !s_magicExclusionFlags.test(MTExclusionEntryFlags::kSprint) ? "ENABLED" : "disabled");
 
 		const bool result = Patch();
 
