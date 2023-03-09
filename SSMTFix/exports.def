@@ -1,0 +1,5 @@
+LIBRARY "SSMT_Fix"
+EXPORTS
+    SKSEPlugin_Query
+    SKSEPlugin_Load
+    SKSEPlugin_Version
