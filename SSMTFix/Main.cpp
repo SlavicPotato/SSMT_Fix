@@ -20,26 +20,18 @@ namespace SSMTF
 
 	static constexpr bool is_sprinting(Actor* a_actor) noexcept
 	{
-		return rel_member(std::addressof(a_actor->actorState1))->sprinting;
+		const auto player = *g_thePlayer;
+
+		return rel_member(std::addressof(a_actor->actorState1))->sprinting &&
+		       (a_actor != player || rel_member(std::addressof(player->flagBDD))->test(PlayerCharacter::FlagBDD::kWantsSprint));
 	}
 
-	static bool is_valid_movement_type_name(const BSFixedString& a_type) noexcept
+	static constexpr bool is_valid_movement_type_name(const BSFixedString& a_type) noexcept
 	{
 		return hash::stricmp_ascii(a_type.c_str(), "NPC", 3) == 0;
 	}
 
-	enum class MTExclusionEntryFlags
-	{
-		kNone = 0,
-
-		kSprint = 1u << 0,
-		kSneak  = 1u << 1,
-
-		kAll = kSprint | kSneak
-	};
-	DEFINE_ENUM_CLASS_BITWISE(MTExclusionEntryFlags);
-
-	static BSFixedString get_mt_string(
+	static const BSFixedString& get_mt_string(
 		const BSFixedString& a_default,
 		Actor*               a_actor) noexcept
 	{
