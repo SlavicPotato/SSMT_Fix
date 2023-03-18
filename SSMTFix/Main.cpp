@@ -86,6 +86,10 @@ namespace SSMTF
 				"NPC2HM",
 				"NPCBow",
 				"NPCMagic"
+			},
+			sneakIgnoreMTs{
+				"NPCBlocking",
+				"NPCBowDrawn"
 			}
 		{
 		}
@@ -110,11 +114,21 @@ namespace SSMTF
 					   a_name) != commonMTs.end();
 		}
 
+		[[nodiscard]] constexpr bool IsSneakIgnoredMT(
+			const BSFixedString& a_name) const noexcept
+		{
+			return std::find(
+					   sneakIgnoreMTs.begin(),
+					   sneakIgnoreMTs.end(),
+					   a_name) != sneakIgnoreMTs.end();
+		}
+
 		BSFixedString NPCSneaking{ "NPCSneaking" };
 		BSFixedString NPCSprinting{ "NPCSprinting" };
 		BSFixedString NPCAttacking{ "NPCAttacking" };
 
 		std::array<BSFixedString, 5> commonMTs;
+		std::array<BSFixedString, 2> sneakIgnoreMTs;
 	};
 
 	static constexpr bool is_1h_melee_weapon(const TESForm* a_form) noexcept
@@ -256,7 +270,14 @@ namespace SSMTF
 
 			if (actorState1.sneaking)
 			{
-				return StringHolder::GetSingleton().NPCSneaking;
+				auto& sh = StringHolder::GetSingleton();
+
+				if (sh.IsSneakIgnoredMT(a_default))
+				{
+					return a_default;
+				}
+
+				return sh.NPCSneaking;
 			}
 
 			if (actorState1.sprinting &&
