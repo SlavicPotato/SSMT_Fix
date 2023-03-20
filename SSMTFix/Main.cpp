@@ -180,7 +180,7 @@ namespace SSMTF
 			}
 		}
 
-		// Use NPCMagic if a spell or staff is equipped in either hand (vanilla behavior)
+		// Use NPCMagic if a spell, scroll or staff is equipped in either hand (vanilla behavior)
 		for (auto& object : pm->equippedObject)
 		{
 			if (!object)
@@ -191,6 +191,7 @@ namespace SSMTF
 			switch (object->formType)
 			{
 			case SpellItem::kTypeID:
+			case ScrollItem::kTypeID:
 
 				return StringHolder::GetSingleton().Get(StringHolder::CMT::kNPCMagic);
 
