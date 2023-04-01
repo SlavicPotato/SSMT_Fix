@@ -363,7 +363,7 @@ namespace SSMTF
 	{
 		const IAL::Address<std::uintptr_t> addr(36919, 37944, 0x8E, 0x133);
 
-		if (!hook::check_dst5<0xE8>(addr.get()))
+		if (!addr.get() || !hook::check_dst5<0xE8>(addr.get()))
 		{
 			return false;
 		}
@@ -398,12 +398,18 @@ namespace SSMTF
 		s_enableExtra = reader.GetBoolValue("", "WieldingMovementTypeFixes", true);
 	}
 
+	[[nodiscard]] static constexpr auto get_swststr(bool a_switch) noexcept
+	{
+		return a_switch ? "ENABLED" : "disabled";
+	}
+
 	bool Initialize([[maybe_unused]] const SKSEInterface* a_skse)
 	{
 		LoadSettings();
 
-		gLog.Message("NPC support %s", s_enableNPC ? "ENABLED" : "disabled");
-		gLog.Message("Wielding MT fixes %s", s_enableExtra ? "ENABLED" : "disabled");
+		gLog.Message("NPC support %s", get_swststr(s_enableNPC));
+		gLog.Message("Wielding MT fixes %s", get_swststr(s_enableExtra));
+		//gLog.Message("FOV interpolation %s", get_swststr(s_enableFOV));
 
 		const bool result = Patch();
 
